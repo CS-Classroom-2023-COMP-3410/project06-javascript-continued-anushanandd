@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Customizable Keyboard Trainer</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #f4f4f4;
+            padding: 20px;
+        }
+        .trainer-container {
+            max-width: 600px;
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        }
+        .target-text {
+            font-size: 1.5em;
+            margin-bottom: 10px;
+            color: lightgray;
+            display: inline-block;
+        }
+        .correct {
+            color: green;
+        }
+        .incorrect {
+            color: red;
+        }
+        .hidden {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="trainer-container" id="trainer">
+        <h1>Keyboard Trainer</h1>
+        <p class="target-text" id="highlighted-text"></p>
+        <div class="results">
+            <p>WPM: <span id="wpm">0</span></p>
+            <p>Accuracy: <span id="accuracy">100</span>%</p>
+        </div>
+        <div class="controls">
+            <button onclick="startTraining()">Start</button>
+            <button onclick="resetTraining()">Reset</button>
+            <label for="difficulty">Difficulty:</label>
+            <select id="difficulty">
+                <option value="easy">Easy</option>
+                <option value="medium">Medium</option>
+                <option value="hard">Hard</option>
+            </select>
+        </div>
+    </div>
+    
+    <div class="trainer-container hidden" id="results">
+        <h1>Test Complete!</h1>
+        <p>Words Per Minute: <span id="final-wpm"></span></p>
+        <p>Accuracy: <span id="final-accuracy"></span>%</p>
+        <button onclick="restartTest()">Restart</button>
+    </div>
+
+    <script>
+        let startTime, timerStarted = false;
+        let targetString = "";
+        let typedString = "";
+        
+        function generateText(difficulty) {
+            const sentences = {
+                easy: [
+                    "The sun is shining brightly.",
+                    "She loves reading books.",
+                    "I enjoy long walks in the park.",
+                    "Birds are chirping outside.",
+                    "He drinks coffee every morning."
+                ],
+                medium: [
+                    "The quick brown fox jumps over the lazy dog.",
+                    "She decided to bake a cake for her friend.",
+                    "Programming requires patience and practice.",
+                    "Mountains look beautiful in the evening light.",
+                    "He finished his assignment before the deadline."
+                ],
+                hard: [
+                    "Artificial intelligence is revolutionizing modern industries.",
+                    "The intricacies of quantum mechanics remain a mystery to many.",
+                    "Creativity flourishes when given space to breathe and grow.",
+                    "Understanding complex algorithms takes years of practice.",
+                    "Exploring the vastness of the universe is a humbling experience."
+                ]
+            };
+            return sentences[difficulty][Math.floor(Math.random() * sentences[difficulty].length)];
+        }
+        
+        function startTraining() {
+            document.getElementById("trainer").classList.remove("hidden");
+            document.getElementById("results").classList.add("hidden");
+            let difficulty = document.getElementById("difficulty").value;
+            targetString = generateText(difficulty);
+            typedString = "";
+            renderText();
+            document.addEventListener("keydown", handleTyping);
+            timerStarted = false;
+        }
+
+        function handleTyping(event) {
+            if (!timerStarted) {
+                startTime = new Date();
+                timerStarted = true;
+            }
+
+            if (event.key === "Backspace") {
+                typedString = typedString.slice(0, -1);
+            } else if (event.key.length === 1 && /^[a-zA-Z0-9 .,!?']$/.test(event.key)) {
+                typedString += event.key;
+            }
+            
+            renderText();
+            checkCompletion();
+        }
+
+        function renderText() {
+            let highlightedText = "";
+            let correct = 0;
+            for (let i = 0; i < targetString.length; i++) {
+                if (i < typedString.length) {
+                    if (typedString[i] === targetString[i]) {
+                        highlightedText += `<span class='correct'>${targetString[i]}</span>`;
+                        correct++;
+                    } else {
+                        highlightedText += `<span class='incorrect'>${targetString[i]}</span>`;
+                    }
+                } else {
+                    highlightedText += `<span>${targetString[i]}</span>`;
+                }
+            }
+            document.getElementById("highlighted-text").innerHTML = highlightedText;
+
+            let accuracy = typedString.length > 0 ? (correct / targetString.length) * 100 : 100;
+            let elapsed = (new Date() - startTime) / 1000 / 60;
+            let wpm = typedString.length > 0 ? Math.round((typedString.trim().split(/\s+/).length) / elapsed) : 0;
+
+            document.getElementById("accuracy").innerText = accuracy.toFixed(2);
+            document.getElementById("wpm").innerText = wpm;
+        }
+
+        function checkCompletion() {
+            if (typedString.length === targetString.length && typedString === targetString) {
+                showResultsPage();
+            }
+        }
+
+        function showResultsPage() {
+            document.getElementById("trainer").classList.add("hidden");
+            document.getElementById("results").classList.remove("hidden");
+            document.getElementById("final-wpm").innerText = document.getElementById("wpm").innerText;
+            document.getElementById("final-accuracy").innerText = document.getElementById("accuracy").innerText;
+            document.removeEventListener("keydown", handleTyping);
+        }
+
+        function restartTest() {
+            startTraining();
+        }
+    </script>
+</body>
+</html>
